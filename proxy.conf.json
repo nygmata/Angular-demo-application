@@ -1,0 +1,8 @@
+{
+  "/Construct": {
+    "target": "https://praams.net:6045",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  }
+}

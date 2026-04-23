@@ -1,0 +1,256 @@
+<div class="jumbotron">
+  <div class="col text-center mt-5">
+    <h1 class="display-4">Application demo</h1>
+    <p class="lead">PRAAMS, 2026</p>
+  </div>
+</div>
+
+
+<div style="position: fixed; top: 10px; left: 0; width: 100%; z-index: 9999;">
+  <div class="container">
+    <div class="row">
+      <div class="col-10 offset-md-1">
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-nav-pill" [class.btn-nav-active]="activeWindow === 1" (click)="setWindow(1)">AI Co-Investor</button>
+          <button type="button" class="btn btn-nav-pill" [class.btn-nav-active]="activeWindow === 2" (click)="setWindow(2)">Manage</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container" style="max-height: 75vh; overflow-y: auto; padding-bottom: 150px;">
+  @if (activeWindow === 1) {
+    <div class="col-10 offset-md-1">
+
+      @for (msg of messages; track msg) {
+        <div class="row mt-1 mb-1">
+          @if (msg.type == 'received') {
+            <div class="d-flex align-items-start flex-column mb-3" [class.w-100]="msg.isPortfolio">
+              <div class="bubble bot-bubble" [class.portfolio-bubble]="msg.isPortfolio">
+                @if (msg.isPortfolio && msg.portfolioData?.item) {
+                  <div class="portfolio-container">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                      <h4 class="portfolio-title m-0">{{ msg.portfolioData.item.portfolioName || 'New Portfolio' }}</h4>
+                      <div class="d-flex gap-4">
+                        @if (msg.portfolioData.item.totalMarketValue || msg.portfolioData.item.marketValue) {
+                          <div class="text-end">
+                            <div class="text-muted small">Total Value</div>
+                            <div class="fw-bold">{{ (msg.portfolioData.item.totalMarketValue || msg.portfolioData.item.marketValue) | number:'1.1-1' }} {{ msg.portfolioData.item.currency || (msg.portfolioData.item.assets && msg.portfolioData.item.assets[0]?.currency) }}</div>
+                          </div>
+                        }
+                        @if (msg.portfolioData.item.expectedReturn) {
+                          <div class="text-end">
+                            <div class="text-muted small">Expected Return</div>
+                            <div class="fw-bold text-success">{{ msg.portfolioData.item.expectedReturn | number:'1.2-2' }}%</div>
+                          </div>
+                        }
+                        @if (msg.portfolioData.item.risk) {
+                          <div class="text-end">
+                            <div class="text-muted small">Risk</div>
+                            <div class="fw-bold text-danger">{{ msg.portfolioData.item.risk | number:'1.2-2' }}%</div>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                    <div class="table-responsive">
+                      <table class="table table-sm table-borderless portfolio-table">
+                        <thead>
+                          <tr>
+                            <th>Asset</th>
+                            <th>Type</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Market Value</th>
+                            <th>Weight</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (asset of msg.portfolioData.item.assets; track asset.isin || asset.ticker || $index) {
+                            <tr>
+                              <td>
+                                <div class="asset-ticker">{{ asset.ticker }}</div>
+                                <div class="asset-issuer text-muted small">{{ asset.issuer }}</div>
+                              </td>
+                              <td>{{ asset.kind === 2 ? 'Equity' : (asset.kind === 3 ? 'Bond' : 'Other') }}</td>
+                              <td>{{ asset.quantity | number:'1.2-2' }}</td>
+                              <td>{{ asset.price | number:'1.2-2' }} {{ asset.currency }}</td>
+                              <td>{{ asset.marketValue | number:'1.1-1' }}</td>
+                              <td>{{ asset.weight | number:'1.2-2' }}%</td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="d-flex justify-content-end align-items-center mt-3 pt-3 border-top gap-3">
+                      <span class="text-muted small">You can view a saved portfolio later in the "Manage" tab</span>
+                      <button class="btn btn-primary btn-save-portfolio" (click)="savePortfolio(msg.portfolioData)">Save portfolio</button>
+                    </div>
+                  </div>
+                } @else {
+                  <div class="card-text" [innerHTML]="msg.message | markdown"></div>
+                }
+                <div class="d-flex gap-2 align-items-center mt-1">
+                  <span class="time_date text-muted"> {{ msg.date | date:'dd-MM-yyyy HH:mm:ss' }} </span>
+                </div>
+              </div>
+            </div>
+          }
+
+          @if (msg.type == 'bot') {
+            <div class="d-flex align-items-start flex-column mb-3">
+              <div class="bubble bot-bubble">
+                <div class="card-text" [innerHTML]="msg.message | markdown"></div>
+                <span class="time_date text-muted"> {{ msg.date | date:'dd-MM-yyyy HH:mm:ss' }} </span>
+              </div>
+            </div>
+          }
+
+          @if (msg.type == 'sent') {
+            <div class="d-flex align-items-end flex-column mb-3">
+              <div class="bubble client-bubble">
+                <p class="m-0">{{ msg.message }}</p>
+                <span class="time_date text-white-50"> {{ msg.date | date:'dd-MM-yyyy HH:mm:ss' }} </span>
+              </div>
+            </div>
+          }
+        </div>
+      } @empty {
+        <p class="col text-center text-bg-light">please type your question ...</p>
+      }
+    </div>
+  } @else {
+    <div class="col-10 offset-md-1">
+      <div class="manage-header d-flex justify-content-between align-items-center mt-4 mb-3">
+        <h3>My portfolios</h3>
+        <button class="btn btn-outline-primary btn-sm" (click)="setWindow(2)">
+          <i class="fa fa-sync-alt me-1"></i> Refresh
+        </button>
+      </div>
+
+      <div class="portfolio-list-container">
+        @for (portfolio of portfolios; track portfolio.id || portfolio.name) {
+          <div class="portfolio-item mb-3">
+            <div class="portfolio-card p-3 border rounded shadow-sm d-flex justify-content-between align-items-center bg-white">
+              <div>
+                <h5 class="mb-1">{{ portfolio.name }}</h5>
+                <div class="text-muted small">
+                  Created: {{ portfolio.dateCreated | date:'dd-MM-yyyy HH:mm' }}
+                </div>
+              </div>
+              <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-primary" (click)="openPortfolio(portfolio.id)">{{ portfolio.isOpen ? 'Close' : 'Open' }}</button>
+              </div>
+            </div>
+
+            @if (portfolio.isOpen && portfolio.details?.item) {
+              <div class="portfolio-details-expanded mt-2 p-3 border rounded bg-light">
+                <div class="portfolio-container">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="portfolio-title m-0">{{ portfolio.details.item.portfolioName }}</h4>
+                    <div class="d-flex gap-4">
+                      @if (portfolio.details.item.totalMarketValue || portfolio.details.item.marketValue) {
+                        <div class="text-end">
+                          <div class="text-muted small">Total Value</div>
+                          <div class="fw-bold">{{ (portfolio.details.item.totalMarketValue || portfolio.details.item.marketValue) | number:'1.1-1' }} {{ portfolio.details.item.currency || (portfolio.details.item.assets && portfolio.details.item.assets[0]?.currency) }}</div>
+                        </div>
+                      }
+                      @if (portfolio.details.item.expectedReturn) {
+                        <div class="text-end">
+                          <div class="text-muted small">Expected Return</div>
+                          <div class="fw-bold text-success">{{ portfolio.details.item.expectedReturn | number:'1.2-2' }}%</div>
+                        </div>
+                      }
+                      @if (portfolio.details.item.risk) {
+                        <div class="text-end">
+                          <div class="text-muted small">Risk</div>
+                          <div class="fw-bold text-danger">{{ portfolio.details.item.risk | number:'1.2-2' }}%</div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                  <div class="table-responsive">
+                    <table class="table table-sm table-borderless portfolio-table">
+                      <thead>
+                        <tr>
+                          <th>Asset</th>
+                          <th>Type</th>
+                          <th>Quantity</th>
+                          <th>Price</th>
+                          <th>Market Value</th>
+                          <th>Weight</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (asset of portfolio.details.item.assets; track asset.isin || asset.ticker || $index) {
+                          <tr>
+                            <td>
+                              <div class="asset-ticker">{{ asset.ticker }}</div>
+                              <div class="asset-issuer text-muted small">{{ asset.issuer }}</div>
+                            </td>
+                            <td>{{ asset.kind === 2 ? 'Equity' : (asset.kind === 3 ? 'Bond' : 'Other') }}</td>
+                            <td>{{ asset.quantity | number:'1.2-2' }}</td>
+                            <td>{{ asset.price | number:'1.2-2' }} {{ asset.currency }}</td>
+                            <td>{{ asset.marketValue | number:'1.1-1' }}</td>
+                            <td>{{ asset.weight | number:'1.2-2' }}%</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        } @empty {
+          <div class="text-center mt-5">
+            <div class="mb-3">
+              <i class="fa fa-folder-open fa-3x text-muted"></i>
+            </div>
+            <p class="text-muted">No portfolios found. Construct one in the 'AI Co-Investor' tab!</p>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
+
+@if (activeWindow === 1) {
+  <div class="fixed-bottom pb-4" style="background-color: white;">
+    <div class="container">
+      <div class="row">
+        <div class="col-10 offset-md-1">
+          <div class="chat-input-container mt-3 flex-column align-items-stretch">
+            <textarea class="form-control chat-input" [value]="txtMessage"
+                   (input)="txtMessage=$any($event.target).value"
+                   (keydown.enter)="$any($event).shiftKey ? null : sendMessage(); $any($event).preventDefault()"
+                   placeholder="Type a message"></textarea>
+
+            <div class="d-flex justify-content-between align-items-center mt-2 w-100">
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-pill"
+                        [class.btn-active-pill]="inputMode === 'construct'"
+                        [class.btn-inactive-pill]="inputMode !== 'construct'"
+                        (click)="inputMode = 'construct'">
+                  <i class="fa fa-compass me-1"></i> Construct
+                </button>
+                <button type="button" class="btn btn-pill"
+                        [class.btn-active-pill]="inputMode === 'manage'"
+                        [class.btn-inactive-pill]="inputMode !== 'manage'"
+                        (click)="inputMode = 'manage'">
+                  <i class="fa fa-bullseye me-1"></i> Manage
+                </button>
+              </div>
+
+              <div class="chat-input-actions static-actions">
+                <button class="btn btn-link p-0 send-arrow-btn" type="button" (click)="sendMessage()">
+                  <i class="fa fa-arrow-up" aria-hidden="true"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}
