@@ -252,10 +252,8 @@ export class App implements OnInit, OnDestroy {
         console.warn('ChatStatus payload details:', payload);
 
         if (payload.chatId === this.chatId) {
-          // Берем текст из поля "response", как в вашем новом логе
           const botMessage = payload.response || payload.status || '';
 
-          // Filter out the "Ready to make a portfolio on base of restrictions" message
           if (botMessage && botMessage.startsWith('Ready to make a portfolio on base of restrictions')) {
             console.log('[DEBUG_LOG] Suppressing status message:', botMessage);
             return;
@@ -270,11 +268,9 @@ export class App implements OnInit, OnDestroy {
               date: new Date()
             } as IMessage;
 
-            // Мгновенно добавляем в список сообщений
             this.messages = [...this.messages, msg];
             this.changeDetectorRef.detectChanges();
 
-            // Также сохраняем в statuses
             this.statuses = [...this.statuses, msg];
           }
         } else {
@@ -313,8 +309,6 @@ export class App implements OnInit, OnDestroy {
                    console.log('[DEBUG_LOG] port2 found in exploreRequest.item');
                    port2Data = parsedExploreRequest['item']['port2'];
                 } else {
-                   // Fallback: if it's already an object but doesn't have port2,
-                   // it might be that the whole object is what we want, or it's still wrapped.
                    port2Data = parsedExploreRequest;
                 }
              }
@@ -327,7 +321,6 @@ export class App implements OnInit, OnDestroy {
           console.log('[DEBUG_LOG] portfolioData:', portfolioData);
 
           if (portfolioData) {
-            // Extract some summary info for the message text if available
             let portfolioDetails = '';
 
             try {
@@ -375,7 +368,6 @@ export class App implements OnInit, OnDestroy {
               }
 
               if (res) {
-                // Determine if res is the wrapper or the item itself
                 const portfolioData = res.item ? res : { item: res };
                 const apiMessage = {
                   chatId: this.chatId,
@@ -414,14 +406,12 @@ export class App implements OnInit, OnDestroy {
 
           let botReplyText = payload.mainContext?.payload || (payload as any).message || (payload as any).response || '';
 
-          // Filter out the "Ready to make a portfolio on base of restrictions" message
           if (botReplyText && botReplyText.startsWith('Ready to make a portfolio on base of restrictions')) {
             console.log('[DEBUG_LOG] Suppressing reply message:', botReplyText);
             return;
           }
 
           if (botReplyText) {
-            // Suppress bot text if we already displayed a portfolio for intent 5
             if (payload.intentType === 5 && exploreRequest) {
               console.log('[DEBUG_LOG] Suppressing bot reply text because portfolio was already displayed for intent 5');
               return;
@@ -446,7 +436,6 @@ export class App implements OnInit, OnDestroy {
       if (message.EventName === 'ChatAllowed') {
         let payload = message.Data[0] as IChatAllowed;
         console.warn('ChatAllowed payload details (suppressed bubble):', payload);
-        // Do not add the "Chat is allowed" message to the messages array to avoid displaying it
       }
     });
   }
